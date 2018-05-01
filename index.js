@@ -5,10 +5,9 @@ var express = require("express"),
   request = require("request"),
   app = express();
 
-var apiaiApp = require("apiai")("9af3d096d2554749b8cb61afa7c49a14");
+var apiaiApp = require("apiai")("yourApiaiToken");
 
-var PAGE_ACCESS_TOKEN =
-  "EAAaQU2wud5oBADUJexRywe43CPpl0bOVblY0ASScK4mOGzYZCGfhpTfLcLj5daqmdry20plK4BNq9cCTKKKVjTL4LxoZB0fAEh3QysiZA5iambYZCqv8ZCZApxw0KOJFT3RnWYIOhhsuZCZAOFe7Q2A32BdBO5WcJvQFsMZBCwoV295fTUbRpZCpqP";
+var PAGE_ACCESS_TOKEN = "yourToken";
 
 // Process application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -20,14 +19,14 @@ app.use(bodyParser.json());
 app.listen(process.env.PORT || 1337, () => console.log("webhook is listening"));
 
 // Index route
-app.get("/", function (req, res) {
+app.get("/", function(req, res) {
   res.send("Hello world, I am a chat bot");
 });
 
 // for Facebook verification
-app.get("/webhook/", function (req, res) {
+app.get("/webhook/", function(req, res) {
   /** UPDATE YOUR VERIFY TOKEN **/
-  var VERIFY_TOKEN = "Shawn_Dev";
+  var VERIFY_TOKEN = "your VERIFY_TOKEN";
 
   // Parse params from the webhook verification request
   var mode = req.query["hub.mode"];
@@ -50,22 +49,18 @@ app.get("/webhook/", function (req, res) {
 
 // API End Point - added by Stefan
 
-app.post("/webhook/", function (req, res) {
+app.post("/webhook/", function(req, res) {
   var body = req.body;
-  // messaging_events = body.entry[0].messaging; // all messenger
 
   if (body.object === "page") {
     // Iterate over each entry - there may be multiple if batched
-    body.entry.forEach(function (entry) {
+    // messaging_events = body.entry[0].messaging; // all messenger
+    body.entry.forEach(function(entry) {
       // Get the webhook event. entry.messaging is an array, but
       // will only ever contain one event, so we get index 0
 
       var webhook_event = entry.messaging[0];
       console.log(webhook_event);
-
-      // Get the sender PSID
-      var sender_psid = webhook_event.sender.id;
-      console.log("Sender PSID: " + sender_psid);
 
       // Check if the event is a message or postback and
       // pass the event to the appropriate handler function
@@ -85,10 +80,9 @@ app.post("/webhook/", function (req, res) {
 
 // Sends response messages via the Send API
 function callSendAPI(sender_psid, messageText) {
-
   //---------api ai
   let apiai = apiaiApp.textRequest(messageText, {
-    sessionId: "Shawn_apiai" // use any arbitrary id
+    sessionId: "your sessionId" // use any arbitrary id
   });
 
   apiai.on("response", response => {
@@ -99,7 +93,7 @@ function callSendAPI(sender_psid, messageText) {
       recipient: {
         id: sender_psid
       },
-      message: { text: aiText } //--->aitext
+      message: { text: aiText } //--->aiText
     };
     console.log("****apiai.on***");
     request(
@@ -174,15 +168,10 @@ function handleMessage(event) {
   if (messageText) {
     console.log("messageText: ", messageText);
     callSendAPI(senderID, messageText);
-  } else if (messageAttachments) {
-    console.log("Message with attachment received");
-
   }
 }
 
-
-var requestAsync = function (url) {
-  // console.log('***url: ',url)
+var requestAsync = function(url) {
   return new Promise((resolve, reject) => {
     var req = request(url, (err, response, body) => {
       if (err) return reject(err, response, body);
@@ -191,10 +180,7 @@ var requestAsync = function (url) {
   });
 };
 
-
-
 app.post("/ai", (req, res) => {
-
   console.log("*** Webhook for api.ai query ***");
 
   if (req.body.result.action === "stock") {
@@ -211,10 +197,10 @@ app.post("/ai", (req, res) => {
 
     console.log("number**", stock_number);
 
-    //---- 
+    //----
     const urls = [restUrl, closeUrl];
 
-    var getParallel = async function () {
+    var getParallel = async function() {
       //transform requests into Promises, await all
       try {
         var data = await Promise.all(urls.map(requestAsync));
@@ -222,7 +208,7 @@ app.post("/ai", (req, res) => {
         console.error(err);
       }
 
-      console.log('***data: ', data);
+      console.log("***data: ", data);
       var msg;
       var DataNumber;
       var DataName;
@@ -233,7 +219,7 @@ app.post("/ai", (req, res) => {
         DataNumber = data[0].rows[0].Row[0];
         DataName = data[0].rows[0].Row[1];
         mClose = data[1].mClose;
-        console.log('***DataNumber && DataName && mClose')
+        console.log("***DataNumber && DataName && mClose");
         msg =
           "股票代碼: " +
           DataNumber +
@@ -246,7 +232,7 @@ app.post("/ai", (req, res) => {
           " ";
       } catch (e) {
         console.log(e);
-        console.log('***查無資料')
+        console.log("***查無資料");
         msg = "查無資料";
       }
       //--
@@ -256,10 +242,8 @@ app.post("/ai", (req, res) => {
         displayText: msg,
         source: "stock"
       });
-
-    }
+    };
 
     getParallel();
-
   }
 });
